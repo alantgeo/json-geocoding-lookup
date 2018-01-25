@@ -1,0 +1,15 @@
+{
+  "name": "json-geocoding-lookup",
+  "version": "1.0.0",
+  "description": "Produces a JSON static geocoding lookup",
+  "main": "json-geocoding-lookup",
+  "bin": "json-geocoding-lookup",
+  "author": "Andrew Harvey <andrew@alantgeo.com.au>",
+  "license": "ISC",
+  "dependencies": {
+    "@mapbox/stream-features-from-file": "^0.2.0",
+    "@turf/bbox": "^4.5.2",
+    "@turf/centroid": "^4.5.2",
+    "yargs": "^11.0.0"
+  }
+}

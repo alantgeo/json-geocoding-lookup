@@ -1,0 +1,74 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const streamFeaturesFromFile = require('@mapbox/stream-features-from-file');
+const turf = {
+    bbox: require('@turf/bbox'),
+    centroid: require('@turf/centroid')
+};
+
+process.on('SIGINT', function() {
+    process.exit();
+});
+
+var argv = require('yargs')
+    .usage('Usage: $0 -i source.geojson -o index.json -k name [-p 4]')
+    .help('h')
+    .alias('h', 'help')
+    .option('i', {
+        alias: 'input',
+        describe: 'input file',
+        type: 'string'
+    })
+    .option('o', {
+        alias: 'output',
+        describe: 'output file',
+        type: 'string'
+    })
+    .option('p', {
+        alias: 'precision',
+        default: 6,
+        describe: 'coordinate precision',
+        type: 'number'
+    })
+    .option('k', {
+        alias: 'key',
+        describe: 'key property',
+        type: 'string'
+    })
+    .demandOption(['input', 'output', 'key'])
+    .argv;
+
+// the JSON is written pretty raw to reduce memory usage as features are piped through
+var outputStream = fs.createWriteStream(argv.output);
+outputStream.once('open', function(fd) {
+    const featureStream = streamFeaturesFromFile(argv.input);
+    var featureCount = 0;
+    var firstFeature = true;
+    outputStream.write("{\n");
+
+    featureStream.on('data', (feature) => {
+        featureCount++;
+        process.stdout.write('...' + featureCount + "\r");
+        if (feature.geometry) {
+            if (feature.geometry) {
+                var value = (feature.geometry.type == 'Point') ?
+                    feature.geometry.coordinates :
+                    turf.bbox(feature).map((coordinate) => { return Number(coordinate.toFixed(argv.precision)); });
+
+                outputStream.write(
+                    (firstFeature ? '' : ',') +
+                    JSON.stringify(feature.properties[argv.key]) + ': ' + JSON.stringify(value) + "\n"
+                );
+                firstFeature = false;
+            }
+        }
+    });
+
+    featureStream.on('end', () => {
+        outputStream.write("}\n");
+        outputStream.end();
+    });
+});
+
+
